@@ -1,0 +1,342 @@
+---
+title: Introduction to R & Rmarkdown
+author: Nikhil Kaza
+date: '2019-12-31'
+slug: introduction-to-r-rmarkdown
+categories: []
+tags: ['R', 'teaching']
+subtitle: 'Getting started with R & Rmarkdown'
+summary: ''
+authors: []
+lastmod: '2022-01-22T22:26:23-05:00'
+featured: no
+image:
+  caption: ''
+  focal_point: ''
+  preview_only: no
+projects: []
+  blogdown::html_page:
+    toc: true
+    fig.width: 7
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning  = FALSE, collapse = TRUE, comment = "#", message = FALSE, progress = FALSE)
+knitr::knit_hooks$set(inline = function(x) { if(!is.numeric(x)){ x }else{ prettyNum(round(x,2), big.mark=",") } })
+```
+
+## Preliminaries
+
+To get started with this course, you will need [R](https://www.r-project.org/). I strongly recommend [Rstudio](http://www.rstudio.com). To function correctly, RStudio needs R and therefore both need to be installed on your computer. If you already have these installed, please see [this page](http://bioinfo.umassmed.edu/bootstrappers/bootstrappers-courses/courses/rCourse/Additional_Resources/Updating_R.html) to make sure you have up to date versions of the software. We will talk about other required software as we proceed further.
+
+## Why R?
+- Great for reproducibility
+- Great for statistics
+- Great for data analysis and visualization
+- Interdisciplinary & Extensible
+- Open source & Cross Platform
+- Most GIS operations can be done in R
+
+See [R-ecology](https://datacarpentry.org/R-ecology-lesson/00-before-we-start.html) for more details.
+
+> Actually, I see it as part of my job to inflict R on people who are  perfectly happy to have never heard of it. Happiness doesn't equal  proficient and efficient. In some cases the proficiency of a person  serves a greater good than their momentary happiness. 
+>       -- Patrick Burns: R-help (April 2005)
+
+### Why not Python? Or Julia? Or C++?
+ Mostly because I don't know them well/or at all. They are probably great, but R works for me, for the most part. [See Sebastian's post on Why Python?.](https://sebastianraschka.com/blog/2015/why-python.html)
+
+## Good Practices
+- Keep track of who wrote what code at the top of the file and its purpose.
+- Use comments liberally using "#".
+- Avoid `setwd()` and use only relative paths. If you must, use `setwd()` only at the top of the script.
+- Distinct components of the code should ideally be separate and be accessed using `source()`. This improves legibility.
+- Use a consistent style within your code. For example, name all dataframes to something ending in _df.
+- Keep all of your source files for a project in the same directory, then use relative paths as necessary to access them.
+- Memory is a problem for R, because it stores all objects in memory (mostly true). Follow good practice of deleting objects that you don't need using  `rm()`. It is rarely necessary for you to use garbage collection `gc()`. If you are running to into problems constantly
+    - Consider upgrading RAM (It is becoming cheaper by the day).
+    - Consider if you can break up the data set and independently process them and reassemble them.
+    - Find alternative libraries and methods. 
+
+## Basic R
+
+Once you have R & Rstudio installed, run the following to see if it is working correctly.
+
+```{r}
+1 + 1   #add 1 + 1
+a<-2:5  #Assign vector 2:5 to a variable a
+a      #print a to console
+runif(5)   #Generate 5 random numbers
+sessionInfo()     #What is my computer environment? (Mac, Windows, libraries etc.)
+```
+
+The output of the last two commands will be different on your computer than what is being shown.
+
+***
+
+**Exercise**
+
+- If a vector a is (4,6,5,7, 10, 9, 4, 15), how many elements are over 7? What position in the vector are they?
+- if b is 3, what is a+b? If b is (2,5), what is a+b?
+
+***
+
+## Literate programming and RMarkdown
+
+[Literate Programming](https://en.wikipedia.org/wiki/Literate_programming) is a concept introduced by Donald Knuth. The fundamental premis is that one should write code that communicates primarily to hummans, not computers. Here are some examples:
+
+- [Introduction to Literate Programming in R](https://remi-daigle.github.io/2017-CHONe-Data/Rmarkdown.nb.html)
+- [Jane Austen and R](https://cran.r-project.org/web/packages/tidytext/vignettes/tidytext.html)
+
+
+[R Markdown](https://rmarkdown.rstudio.com/) allows you easily write documents that contain: R code, text, images, links, etc. You are required to use it for this course and you should effectively use it as a lab notebook for your data analysis everywhere. This and other tutorials in this sequence are written in Rmarkdown.
+
+## Getting started with Markdown
+
+To start a new Markdown file, open up Rstudio and follow the following picture.
+![](./img/Rmarkdown_screenshot.png)
+
+
+The created template is quite informative. Use *Knit* on the top to see the output of the template.
+![](./img/Rmarkdown_yaml.png)
+
+
+The parameters between the two `---` is a YAML header. YAML(YAML Ain't Markup Language) is a human-readable data serialization language. Most of the document rendering settings are there. Experiment with them. By simply changing the output format, we can get a doc file or a html file.
+
+The rest of the document is formatted according to markdown syntax. Below are some useful syntax to structure your documents.
+
+```
+# Heading 1
+## Heading 2
+
+
+*italics*
+
+**bold**
+
+~~strikethrough~~
+
+~subscript~
+
+^superscript^
+
+![](pictures/notebook.png)
+
+[link](www.link.com)
+
+$E = mc^2$
+
+$$y = \mu + \sum_{i=1}^p \beta_i x_i + \epsilon$$
+```
+
+Other syntax are available at [Rstudio website](https://www.rstudio.com/wp-content/uploads/2015/02/rmarkdown-cheatsheet.pdf).
+
+
+
+## R Markdown
+
+To include R code in your file you can insert a code chunk with
+
+- the keyboard shortcut Ctrl + Alt + I (OS X: Cmd + Option + I)
+- the Add Chunk  command in the editor toolbar
+- or by typing the chunk delimiters \```{r} and \```
+
+Chunk output can be customized with [knitr options](https://yihui.name/knitr/options/)⧉, arguments set in the {} of a chunk header. The main ones are `include`, `cache`, `echo`, `message`, `warning` and `fig.cap`
+
+Here is an example
+```{r cars}
+summary(cars) #cars is a dataset included in base R
+```
+
+It is often the case that when markdown files get big, it is useful to cache the output using the cache option for the code chunks.
+
+Embedding graphics created from R is also very easy.
+
+```{r}
+plot(cars$speed, cars$dist)
+```
+
+
+***
+
+**Exercise**
+
+- Extend the template that creating Rmarkdown file with one more R command and one more graphic on cars dataset
+
+***
+
+Embedding graphics created from external programs is also straight forward. There are many ways to do it (for example using the ```![](./img/anaconda.png)``` as noted above), but I prefer the following approach.
+
+
+```{r anaconda, fig.cap="An external image", out.width = '50%'}
+library(knitr) # include_graphics is a command in knitr package. We need to explictly initialise it once per session using the library command.
+include_graphics("./img/anaconda.png") # Change the file path suitably.
+```
+
+
+### Reading real data into R
+
+In this course, we are going to follow the tidyverse style of programming and its associated packages. To read a comma separated file (*.csv) we are going to use ```read_csv``` command from ```tidyverse``` package.
+
+Download the latest building violations data from [building violations data](https://data.cityofchicago.org/Buildings/Building-Violations/22u3-xenr) from the Chicago Open Data Portal. For convenience, [a local copy downloaded in 2019 is stored here](https://www.dropbox.com/s/406dh96rgkgvjf4/Building_Violations.csv?dl=0). 
+
+```{r chicago}
+library(tidyverse)
+chicago_df <- read_csv("../../../tutorials_datasets/buildingviolations/Building_violations.csv")
+
+summary(chicago_df)
+
+nrow(chicago_df)
+
+str(chicago_df)
+
+```
+
+Looking at the data gives you a lot information about how the data is read and stored. You will find that quirks of data types and storage produce many unexpected results. Pay close attention to this step to avoid countless hours of debugging. For example, why is Latitude and Longitude represented as T/F rather than a number?
+
+
+***
+
+**Exercise**
+
+It is useful to develop specific naming conventions for variables and datasets, so that your code will be legible to you later on.
+
+- Notice that column names have spaces in them. Rename the columns replacing the space with an underscore, using `rename` command from tidyverse package
+- Notice that VIOLATION DATE column is read in as a character but should really be a date. Using `mdy` command from lubridate package and `mutate` command from tidyverse, convert this column to date variable type and save it.
+- Notice that parsing the file resulted in a lot of errors that read_csv gracefully skipped over. Examine the data file to understand what these errors are. Can you read the file correctly, by explictly specifying the `col_types` in read_csv command. See help for read_csv.
+
+***
+
+
+### Basic Data Manipulation
+
+
+To find out the different violations issued by different bureaus and their status, we can create a contingency table using the `table` function. 
+
+```{r}
+chicago_cont_table_df <- table(chicago_df$`DEPARTMENT BUREAU`, chicago_df$`VIOLATION STATUS`) 
+chicago_cont_table_df
+```
+
+
+`$` is  special function that allows us access to the columns in a dataset. We use \`\` to access columns whose names have spaces or other special characters. Note that R is sensitive to capitalistation.
+
+Notice that "No Entry" category is not relevant for most categories, so we ignore those records and create a barplot of this table. 
+
+
+```{r}
+chicago_df2 <- chicago_df[chicago_df$`VIOLATION STATUS` != "NO ENTRY",] #!=  is logical operator meaning not equal to.
+chicago_cont_table_df2 <- table(chicago_df2$`VIOLATION STATUS`, chicago_df2$`DEPARTMENT BUREAU`) # Notice the flip from before. This is done to make the barplot work.
+
+colrs <- c("Green","Red")
+
+barplot(as.matrix(chicago_cont_table_df2 ), main="Bar Chart", ylab = "Count", cex.lab = 1.1, cex.main = 1.4, beside=TRUE, col= colrs)
+legend("topright", c("Complied", "Open"), cex=1.3, bty="n", fill=colrs)
+
+```
+
+
+---
+
+**Exercise**
+
+The above is a terrible graphic and is used for demonstration purposes only. What is wrong with this graphic? 
+
+---
+
+
+```{r echo=FALSE}
+library(lubridate)
+chicago_df <- read_csv("../../../tutorials_datasets/buildingviolations/Building_violations.csv", col_types = 'dccccccccccdccccdccccddddc')
+chicago_df$`VIOLATION DATE` <- mdy(chicago_df$`VIOLATION DATE`)
+```
+
+
+
+We can also subset the dataset by restricting it to 2008-2009 and write it out a separate dataset
+
+```{r}
+
+
+chicago_df %>%
+  filter(year(`VIOLATION DATE`) >= 2008 & year(`VIOLATION DATE`) < 2009) %>% #This will only work if you successfully used mdy function to convert VIOLATION DATE into a date format, instead of a character
+  write_csv("../../../tutorials_datasets/buildingviolations/violations_2008.csv")
+
+```
+
+Notice few things that are important.
+
+-  `%>%` is called a pipe operator. A combination function $f(g(x))$ where $f$ and $g$ are functions and $x$ is the argument can be written as `x %>% f() %>% g()`. You will do well to get comfortable with this pipe operator as it makes the code cleaner. It is  part of `magittr` package, which is loaded when you call `library(tidyverse)` in the earlier section of the code. See [this tutorial](https://www.datacamp.com/community/tutorials/pipe-r-tutorial) for details.
+
+- `&` is a logical operator. `&` and `&&` indicate logical AND and `|` and `||` indicate logical OR. The shorter form performs elementwise comparisons in much the same way as arithmetic operators. The longer form evaluates left to right examining only the first element of each vector. Evaluation proceeds only until the result is determined. The longer form is appropriate for programming control-flow and typically preferred in if clauses. 
+
+- I could have simply used year(.) == 2008 to achieve the same result. But in what situations will this code fail to do what you want it to do? Hint: 2008 could be stored and interpreted in R in lot of different ways (double, character, Date).
+
+- `filter` is function from tidyverse that subsets the data by filter rows. A corresponding function that subsets columns is called `select`.
+
+- `write_csv` is a function that writes a dataset into a csv file.
+
+
+Now consider that you want to programmatically create subsets of this data by year for each year. You can repeat the above code numerous times, each time modifying the filter function and the file path in the write_csv function. Such procedure is tedious. Instead, we can write a function that takes year as a argument, and repeatedly call the function with the right argument.
+
+```{r}
+write_chicago_df_fun <- function(yr){  #yr is an argument. Avoid using names that are already other functions, such as year.
+  file_name_str <- paste("../../../tutorials_datasets/buildingviolations/violations_", yr, ".csv" ,sep="") # This will create a string "../../../tutorials_datasets/buildingviolations/voilations_2008.csv" when yr == 2008 and store it in the variable "file_name_str"
+  
+   chicago_df %>%
+  filter(year(`VIOLATION DATE`) == yr) %>%  # Note the ==
+  write_csv(file_name_str)
+
+  return() #return null, because we are already writing the dataset into a disk file.
+} 
+
+
+for (yr2 in 2006:2020){  # I am using yr2 as a variable to avoid confusion between arguments.
+  write_chicago_df_fun(yr2)
+}
+
+```
+
+```{r eval = FALSE}
+# Alternately, if you don't think that you will use the write_chicago_df_fun again you can just write a loop
+
+for (yr2 in 2006:2020){
+  file_name_str <- paste("../../../tutorials_datasets/buildingviolations/violations_", yr2, ".csv" ,sep="") #
+  
+  chicago_df %>%
+  filter(year(`VIOLATION DATE`) == yr2) %>%  # Note the yr2
+  write_csv(file_name_str)
+  
+  rm(file_name_str) #It is a good practise to clean up after yourself.
+}
+
+```
+
+You should see all the files correctly labelled as below
+
+![](./img/files.png)
+
+
+***
+
+**Exercise**
+
+- Notice that I included 2020 in the loop and R faithfully produced an empty file called `violations_2020.csv`. While this is innocuous at the moment, user errors might create unexpected results. Add some error checking to the function and trap these situations. Do not simply change the for loop condition.
+
+- Adapt the function and the for loop to write out files in two year increments e.g. `violations_2006_2007.csv` and `violations_2008_2009.csv`
+
+- Can you find a more R way to replace the for loop? Hint: use `sapply`.
+
+
+***
+
+
+## Additional Resources
+
+- [R markdown cheatsheet](https://rstudio.com/wp-content/uploads/2015/02/rmarkdown-cheatsheet.pdf)
+- [Starting with R from Computer World](https://www.computerworld.com/article/2497143/business-intelligence-beginner-s-guide-to-r-introduction.html)
+- [Data import cheatsheet](https://github.com/rstudio/cheatsheets/raw/master/data-import.pdf)
+
+
+
+

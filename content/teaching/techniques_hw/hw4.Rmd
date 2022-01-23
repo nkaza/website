@@ -1,0 +1,21 @@
+---
+title: "HW 4: Due Day 4 11:59 PM"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Scraping web for data
+
+Use Canvas to submit the HW. Both RMarkdown and the knitted html file is required for full credit.
+
+## Task 
+
+Make the script from the lab more robust to errors and get a listing of all day care centers, hospitals, elder care centers, health clinics etc. in Wuhan. For this you may need to chunk the city into parts and search within each chunk.
+
+For each transit stop in Wuhan (Bus and Metro) find the shortest distance/travel time to each of these points of interests. 
+Are there certain points that are not particularly well-served by transit? Write up a report summarising your findings.
+
+

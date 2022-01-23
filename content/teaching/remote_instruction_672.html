@@ -1,0 +1,75 @@
+---
+title: Using Rstudio.cloud for Troubleshooting
+author: Nikhil Kaza
+date: '2020-03-12'
+slug: remote-instruction-672
+categories: 
+ - teaching
+ - R
+tags:
+  - PLAN 672
+header:
+  caption: ''
+  image: ''
+summary: COVID-19 actions
+bibliography: 
+      - ../../../../public/master_2.bib
+biblio-style: apsr
+output:
+  blogdown::html_page:
+    toc: false
+    fig_width: 6
+    number_sections: false
+---
+
+<script src="/rmarkdown-libs/header-attrs/header-attrs.js"></script>
+
+
+<div id="asynchronous-communications-and-troubleshooting" class="section level2">
+<h2>Asynchronous Communications and Troubleshooting</h2>
+<p>We will continue to use Microsoft Teams for asynchronous communication and troubleshooting. Troubleshooting code errors without the cushion of in-person interactions forces us to communicate and act differently. Fortunately, this is an standard practice that has matured a lot in the last two decades. We can follow guidelines like these:</p>
+<p>[1] <a href="https://stackoverflow.com/help/how-to-ask" class="uri">https://stackoverflow.com/help/how-to-ask</a></p>
+<p>[2] <a href="https://codereview.stackexchange.com/help/how-to-ask" class="uri">https://codereview.stackexchange.com/help/how-to-ask</a></p>
+<div id="using-rstudio-cloud" class="section level4">
+<h4>Using RStudio Cloud</h4>
+<p>We will use RStudio Cloud for troubleshooting in this course. Think of RStudio Cloud as an instance of RStudio in the cloud where you can share not only your script but also the whole environment. This increases the likelihood that others can replicate your results or troubles.</p>
+<ul>
+<li>First, create an account in <a href="https://rstudio.cloud" class="uri">https://rstudio.cloud</a> like you would in any other website. Or login using your Github account. Here is the workflow of how this would work.</li>
+</ul>
+<p><img src="../img/remoteinstruction/usecase.jpg" /></p>
+<ul>
+<li>Organize your work in Projects. Everything related to a particular exercise (script, data, markdowns, etc.) should be part of one project. To create a project, go to your RStudio Cloud homepage and click New Project.</li>
+</ul>
+<div class="figure">
+<img src="../img/remoteinstruction/rc1.PNG" alt="" />
+<p class="caption"><i>Start a project</i></p>
+</div>
+<ul>
+<li>This opens a RStudio interface in your browser. You can use this familiar interface to rename project, upload files, add new R script and more. See highlighted buttons in the following picture.</li>
+</ul>
+<div class="figure">
+<img src="../img/remoteinstruction/rc2.PNG" alt="" />
+<p class="caption"><i>The fundamentals</i></p>
+</div>
+<p>{{% callout warning %}}
+The only caveat with RStudio Cloud is the limited [1 GB] space for each project in the free accounts. Because the datasets we work with are often large, it is probably a good idea to subset the data and post it to the project.</p>
+<p>{{% /callout %}}</p>
+<ul>
+<li>After adding your scripts and files, you can share the project by sharing its URL. It looks like: <a href="https://rstudio.cloud/project/1034476" class="uri">https://rstudio.cloud/project/1034476</a>. Before sharing the project, click the gear sign on top-right of your project page, and change Access for Who can view this project to Everyone from the drop-down.</li>
+</ul>
+<div class="figure">
+<img src="../img/remoteinstruction/rc3.PNG" alt="" />
+<p class="caption"><i>Sharing your project</i></p>
+</div>
+<ul>
+<li><p>When you open a project link that your colleagues have shared on Microsoft Teams, it will create a temporary version of the project in your account. No changes made to the temporary version will change the original. After you have a clear solution, save a permanent copy. This will create a new URL that can be shared back.
+<img src="../img/remoteinstruction/rc5.PNG" alt="Responding to requests" /></p></li>
+<li><p>The 1 GB limit includes the space for the libraries from the Cloud console. In some instance installing libraries from the source (such as dplyr) might require more than 1 GB in memory. There are no easy solutions to that.</p></li>
+<li><p>In case your space becomes full, download projects that you do not require in the cloud and delete them from your RStudio Cloud account. Check the box left to Cloud, click More and select Export.</p></li>
+</ul>
+<div class="figure">
+<img src="../img/remoteinstruction/rc4.PNG" alt="" />
+<p class="caption"><i>Exporting your project</i></p>
+</div>
+</div>
+</div>

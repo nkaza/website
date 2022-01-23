@@ -1,0 +1,759 @@
+---
+title: Geospatial Data in R
+author: Nikhil Kaza
+date: '2018-07-29'
+slug: geospatial-data-in-r
+categories: ['new-urban-analytics', 'transportation']
+tags: ['R', 'teaching']
+summary: Geospatial data in R, using Citi Bike Share in New York city as a case.
+image:
+  caption: 'Bike Share Trips in NYC'
+  focal_point: Smart
+plotly: true
+math: true
+output:
+  blogdown::html_page:
+    toc: true
+    fig_width: 7
+    number_sections: false
+---
+
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(here)
+knitr::opts_chunk$set(warning  = FALSE, collapse = TRUE, comment = "#", message = FALSE, progress = FALSE)
+knitr::knit_hooks$set(inline = function(x) { if(!is.numeric(x)){ x }else{ prettyNum(round(x,2), big.mark=",") } })
+```
+
+## Introduction
+
+In this post, I am going to show how one might go about analysing the [Bikeshare use in New York city](https://www.citibikenyc.com/system-data). The purpose of this post is to demonstrate how to do some standard exploratory analysis and visualisation in open source software primarily in R. 
+
+One of the fundamental data structures in R is colloquially a table. A table is collection of loosely related observations (rows), where the attributes of these observations are in columns. In general, each column has values of same type, e.g. text, date, number, but different columns could be of different types. One of these columns could be a geometry, another could be a time stamp. This is the philosophy behind some of the newer R packages that are using ISO standards for spatial data. Traditional GIS, such as ArcGIS or QGIS put geometry/location as the fundamental and attach attributes to locations. This requires that all geometries to be the same, which is limiting in many cases. Whereas spatial databases such as POSTGIS/POSTGRESQL, GeoJSON etc. make observations fundamental and attach geometry as one of the columns (could have missing values). This also allows for mixing different geometry types. In this tutorial, we will use the `sf` package that implements the simple features access (like POSTGIS) to load, analyse and visualise spatial data. The advantage with sf is that it fits with the `tidyverse` computation frameworks, including visualisation with `ggplot`.
+
+
+As we will see in this analyses, many of the interesting questions lurk in the relationships and summarisation of the variables of the observations rather than in the spatial relationships. In many instances, spatial attributes are used for visualisation and exploration rather taking advantage of the inherent topolgical relationships. However, even when topological relationships are important, many packages in R allow us to work with them. 
+
+## Additional resources
+
+In this post, I am assuming that the users have some familarity with spatial datasets and this includes coordinate systems, projections, basic spatial operations such as buffering, distance etc. in other contexts such as QGIS. If not, please refer other resources, including [this one](https://guides.lib.unc.edu/software/training). Graphical User Interfaces of some software such as QGIS and ArcGIS allow for quick learning, visualisation. Using R or Python should be considered an advanced skills when point and click becomes tedious and/or overhead for constant visualisation is not essential to the task at hand.
+
+Other resources include
+
+- Robert Hijmans. [www.rspatial.org](www.rspatial.org)
+- Edzer Pebesma. [www.r-spatial.org](www.r-spatial.org)
+- Robin Lovelace, Jakub Nowosad, Jannes Muenchow.  [Geocompuation with R](https://geocompr.robinlovelace.net/)
+-  Oscar Perpiñán Lamigueiro. [Displaying time series, spatial and space-time data with R](https://oscarperpinan.github.io/bookvis/)
+
+
+
+## Acquire data
+
+- [Bikeshare use in New York city](https://www.citibikenyc.com/system-data). Download the June 2018 dataset.
+- [2010 Census Blocks for New York city](https://data.cityofnewyork.us/City-Government/2010-Census-Blocks/v2h8-6mxf/data)
+- Blockgroup demographic data from American Community Survey 2012-2016
+
+You can also download the [local copy](https://www.dropbox.com/s/vhte1lhqc1avbs4/nybikeshare.zip?dl=0) of the above datasets.
+
+{{% callout note %}}
+
+Todd Schneider [analysed 22 million NYC bike share trips](http://toddwschneider.com/posts/a-tale-of-twenty-two-million-citi-bikes-analyzing-the-nyc-bike-share-system/) of a much larger dataset that this. Check it out.
+
+{{% /callout %}}
+
+## Analyse bike stations
+
+```{r, cache=TRUE}
+library(tidyverse)
+
+
+tripdata <- here("tutorials_datasets","nycbikeshare", "201806-citibike-tripdata.csv") %>% read_csv()#Change the file path to suit your situation.
+tripdata <- rename(tripdata,                         #rename column names to get rid of the space
+                   Slat = `start station latitude`,
+                   Slon = `start station longitude`,
+                   Elat = `end station latitude`,
+                   Elon = `end station longitude`,
+                   Sstid = `start station id`,
+                   Estid = `end station id`,
+                   Estname = `end station name`,
+                   Sstname = `start station name`
+
+)
+
+tripdata
+
+#Convert gender  and usertype to factor
+tripdata$gender <- factor(tripdata$gender, labels=c('Unknown', 'Male', 'Female')) 
+tripdata$usertype<- factor(tripdata$usertype)
+summary(tripdata)
+```
+
+Few things jump out just by looking at the summary statistics.
+
+-  The dataset is large. Just one month has close to 2 million trips.
+-  We know from the documentation that trips that are less than a minute are not included in the dataset. So minimum of tripduration is 61 seems correct. This also gives a clue about the units of the tripduration column (s). Another way to verify the column is to do date arithmetic over start and stop times
+-  Some trips durations are extrodinarily large. One took 37 days! But substantial portion of them (90%) took less than 30 min and 95% of the trips were below 45 min. To see this use `quantile(tripdata$tripduration, .9)`. So clearly, there are some issues with trips that are outliers.
+-  Some trips did not end till mid-July, even though this is a dataset for June. So clearly, the dataset is created based on start of the trip. It is unclear from the documentation and from the summary, what happens to the rare trips that did start in June and did not end till the dataset was created.
+-  While the longitudes (both start and end) are tightly clustered around -73.9, there seem to be few observations with latitudes around 45.5, while the rest are around 40.7. A localised study such as this one, is unlikely to span 5&deg; latitude difference (~350 miles or 563 km). Clearly there are some outliers w.r.t stations. 
+-  There are at least a few riders who are older than 100 years. Centenarians are unlikely to use the bikeshare. This may simply be a data quality issue for that particular column rather than one that poses a problem for the analysis.
+-  87% of the riders are subscribers. This is a surprise to me. Presumably one is subscriber if they lived in New York and not likely to be subscriber if they are visiting. I would have guessed that New Yorkers might want to own a bike that fitted to them, rather than renting an ill-fitted bike. Perhaps for rides with duration less half an hour, perhaps fitting of the bike does not matter. Only 13% of the trips were by customers, suggesting that there are either significant barriers to using bikeshare as a one-off customer. Or alternative modes are much more acessible with fewer transaction frictions.
+-  The bikeshare is used predominantly by men (65%). Less than a quarter of the bike share users are women. 
+
+```{r cache=TRUE}
+prop.table(table(tripdata$usertype))
+prop.table(table(tripdata$gender))
+prop.table(xtabs(~usertype+gender, data=tripdata), margin=2)
+```
+
+-  Of the unknown gender, 83% are customers rather than subscribers. Since I am not aware of the registration (and therefore data collection process about the users) to access these bikeshare, I do not know what information is collected from customers and subscribers. It is unlikely that non-binary gendered persons are responsible for 10% of the trips. It is more likely to be truly missing information in the data collection process, rather than an interesting and understudied subgroup that we can address with this dataset.
+
+## Clean dataset
+
+A significant part of anlaysis is cleaning and massaging data to get it into a shape that is analyseable. It is important to note that this process is iterative and it is important to document all the steps for the purposes of reproducibility. In this example, I am going to demonstrate some the choices and documentation, so that I can revisit them later on to modify or to justify the analytical choices. 
+
+Let's plot all the bikestations
+
+```{r}
+start_loc <- unique(tripdata[,c('Slon', 'Slat', "Sstid", 'Sstname')]) %>% rename(Longitude = Slon, Latitude = Slat, Stid = Sstid, Stname=Sstname)
+end_loc <- unique(tripdata[,c('Elon', 'Elat', 'Estid', 'Estname')]) %>% rename(Longitude = Elon, Latitude = Elat, Stid = Estid, Stname=Estname)
+station_loc <- unique(rbind(start_loc, end_loc))
+rm(start_loc, end_loc)
+
+library(leaflet)
+
+m1 <- 
+leaflet(station_loc) %>%
+  addProviderTiles(providers$Stamen.TonerLines, group = "Basemap") %>%
+  addProviderTiles(providers$Stamen.TonerLite, group = "Basemap") %>%
+  addMarkers(label = paste(station_loc$Stid, station_loc$Longitude, station_loc$Latitude, station_loc$Stname, sep=",")
+  )
+
+library(widgetframe)
+widgetframe::frameWidget(m1)
+
+```
+
+As noted above, there seems to be two stations in Montreal for a NYC Bikeshare system. Zooming in, reveals that these stations are 8D stations. 8D is a company that provides technology for bikeshares around the world. Clearly, these stations are not particularly useful for trip analysis purposes. I will collect their ids into a vector.
+
+```{r}
+(eightDstations <- station_loc[grep(glob2rx("8D*"), station_loc$Stname),]$Stid)
+```
+
+Let's look at the trip that seems to have taken quite long (~37 days).
+
+```{r}
+tripdata[which.max(tripdata$tripduration),c('Sstname', 'Estname','tripduration')]
+```
+
+ This seems to be a trip with bikes returned to depot. This also means that there are depots in the system that might have no real trips attached to them. Let's collect them to target for eliminiation.
+ 
+```{r}
+ 
+ (Bikedepots <- station_loc[grep(glob2rx("*CBS*"), station_loc$Stname),]$Stid)
+```
+ 
+Let's examine some other longer trips (say more than 2 hrs)
+
+```{r}
+tripdata %>%
+  select(Sstid, Estid, tripduration) %>%
+  filter(tripduration >= 60*60*2) %>%
+  group_by(Sstid, Estid) %>%
+  summarise(triptots = n(),
+            averagetripdur = mean(tripduration)
+            ) %>%
+  arrange(desc(triptots))
+  
+```
+
+There are ~5100 such unique Origin-Destination (OD) pairs. The displayed tibble points to a few things.
+
+-  The trip totals of these OD pairs, are relatively inconsequential in a trip database of 2 million.
+-  There seems to be no apparent pattern in the start station ids or end station ids.
+-  More consequentially, there are some trips that start and end at the same location, even when they took longer than a minute. Because, we do not have information about the actual path these bicyclists took, we cannot compute reliable paths when origin and destinations are the same. So we will have to ignore such trips.
+
+```{r}
+
+station_loc <- station_loc[!(station_loc$Stid %in% Bikedepots |  station_loc$Stid %in% eightDstations), ]
+tripdata <- tripdata[tripdata$Estid %in% station_loc$Stid & tripdata$Sstid %in% station_loc$Stid, ]
+diffdesttrips <- tripdata[tripdata$Estid != tripdata$Sstid, ]
+c(nrow(tripdata), nrow(diffdesttrips))
+nrow(station_loc)
+
+summary(diffdesttrips)
+```
+
+***
+
+**Exercise**
+
+- The trip duration still seems to have some extremly high values. Explore the dataset more and see if there are patterns in the outliers that might pose problems for the analysis.
+- What other data attributes can be used to explore anamolous data?
+- While exploring the anamolous data, what other interesting patterns emerge from the dataset?
+
+***
+
+
+# Visualising data with point location attribute
+
+It might be useful to think about which station locations are popular to start the trips. We will apply the data summarisation techniques discussed in earlier posts and relatively easily compute and visualise the dataset. 
+
+```{r}
+library(lubridate)  #useful for date time functions
+
+numtrips_start_station <- diffdesttrips %>%
+  mutate(day_of_week = wday(starttime, label=TRUE, week_start=1)) %>% #create weekday variable from start time
+  group_by(Sstid, day_of_week, usertype) %>%
+  summarise(Slon = first(Slon),
+            Slat = first(Slat),
+            totaltrips = n()
+            )
+
+numtrips_start_station %>%
+  arrange(desc(totaltrips))
+
+g1 <- ggplot(numtrips_start_station) +
+  geom_point(aes(x=Slon, y=Slat, size=totaltrips), alpha=.5) +  # We use the  size of the point to denote its attraction
+   scale_size_continuous(range= c(.1,2))+
+  facet_grid(usertype ~ day_of_week) +  # Compare subscribers and customers
+   scale_x_continuous("", breaks=NULL)+
+   scale_y_continuous("", breaks=NULL)+
+   theme(panel.background = element_rect(fill='white',colour='white'), legend.position = "none")  + coord_fixed()
+
+library(plotly)
+
+ggplotly(g1) #
+```
+
+
+***
+
+**Exercise**
+
+- Interpret this visualisation. What does it tell you? Is there a way to make it better?
+- How about visualsing the popularity of the station by time of day. Clearly using every single hour is problematic. Create a new variable that partitions the data into day and night and see if there are any interesting patterns.
+
+***
+
+It turns out that ggplotly ignores the setting the x and y scales to NULL. So we get see them anyway. But for publication quality plots, ggplots are sufficent and more granular control over what appears in the image is useful. However for exploratory purposes, plotly graphs are great because of the ability to zoom and select. Especially with facetted plots, brushing and linking is enabled, which allow for useful explorations. 
+
+One of the significant problems with point plots is the overplotting, points on top of another. There are a number of ways to correct this, none of them are useful in all cases. For example, one visualise it using a contour plot.
+
+```{r eval= FALSE}
+ggplot(diffdesttrips, aes(Slon, Slat)) +  
+    stat_density2d(aes(alpha=..level.., fill=..level..), size=2, 
+        bins=10, geom="polygon") + 
+    scale_fill_gradient(low = "blue", high = "red") +
+    scale_alpha(range = c(0.00, 0.5), guide = FALSE) +
+    geom_density2d(colour="black", bins=10) +
+```
+
+I will leave this for later posts.
+
+Notice that until now, we got significant mileage out of our explorations, even without invoking any geospatial predicates or topological relations. More often than not, the x-y location of point is largely unimportant. For example, it might be more useful to explore which stations are popular at different days of the week and then plot them to see if there are patterns.
+
+```{r}
+
+numtrips_start_station <- diffdesttrips %>%
+  mutate(day_of_week = wday(starttime, label=TRUE, week_start=1)) %>%
+  group_by(Sstid, day_of_week) %>%
+  summarise(Slon = first(Slon),
+            Slat = first(Slat),
+            totaltrips = n()
+            ) %>%
+  group_by(day_of_week) %>%
+   mutate(
+     outlier_def = case_when(
+       totaltrips <= quantile(totaltrips,.05) ~ "Low",
+       totaltrips >= quantile(totaltrips, .95) ~ "High",
+       TRUE ~ "Normal"
+     )
+   )
+  
+
+
+tmpfi <- numtrips_start_station %>% 
+ filter(outlier_def!="Normal")
+
+  ggplot()+
+  geom_point(aes(x=Slon, y=Slat, color=factor(outlier_def)), alpha=.9, data=tmpfi)+
+  scale_color_brewer(palette="Dark2") + 
+  facet_wrap(~day_of_week, ncol=5)+
+     scale_x_continuous("", breaks=NULL)+
+   scale_y_continuous("", breaks=NULL)+
+   theme(panel.background = element_rect(fill='white',colour='white'), legend.position = "bottom") +
+  labs(colour = "Station Popularity") 
+  
+```
+
+```{r echo=FALSE}
+  rm(tmpfi)
+```
+
+
+***
+
+**Exercise**
+
+- Are there different stations that are popular at different times of the day?
+- Instead of the start of the trip as a measure of popularity, what about the destinations?
+
+***
+
+## Finally some spatial objects
+
+While much can be accomplished on a table which has some geometry columns, it should come as no suprise that spatial objects are incredibly useful. For example, selecting all points that fall within 1km of each observation is more complicated than filtering on values.  
+
+It is straightfoward to convert a dataframe into a sf object using `st_as_sf` function It is also straightforward and faster to read an external geospatial file into sf object using `st_read`. We will see examples of that later on. 
+
+
+```{r}
+library(sf)
+
+ numtrips_start_station <- st_as_sf(numtrips_start_station, coords = c('Slon', 'Slat'), crs = 4326) # WGS84 coordinate system
+ 
+ numtrips_start_station
+```
+
+Just as filtering a tibble returns another tibble, filtering a sf object returns another sf object. This can be directly plotted and styled using leaflet.  
+
+```{r}
+ daytrips <-   numtrips_start_station[numtrips_start_station$day_of_week=="Tue",]
+ center <- c((st_bbox(daytrips)$xmax+st_bbox(daytrips)$xmin)/2, (st_bbox(daytrips)$ymax+st_bbox(daytrips)$ymin)/2)
+ names(center) <- NULL
+
+
+ Npal <- colorNumeric(
+   palette = "Reds", n = 5,
+   domain = daytrips$totaltrips
+ )
+ 
+ m1 <-daytrips %>%
+    leaflet() %>%
+  setView(lng=center[1], lat=center[2], zoom=13) %>%
+  addProviderTiles(providers$Stamen.TonerLines, group = "Basemap") %>%
+  addProviderTiles(providers$Stamen.TonerLite, group = "Basemap") %>%
+   addCircles(
+     radius = (daytrips$totaltrips - mean(daytrips$totaltrips))/sd(daytrips$totaltrips) * 30,
+     fillOpacity = .6,
+    fillColor = Npal(daytrips$totaltrips),
+     group = 'Stations',
+     stroke=FALSE
+   ) %>%
+  addLegend("topleft", pal = Npal, values = ~totaltrips,
+            labFormat = function(type, cuts, p) {
+              n = length(cuts) 
+              paste0(prettyNum(cuts[-n], digits=0, big.mark = ",", scientific=F), " - ", prettyNum(cuts[-1], digits=0, big.mark=",", scientific=F))
+            },
+            title = "Number of Trip Starts",
+            opacity = 1
+  )
+
+ widgetframe::frameWidget(m1)
+
+```
+
+A point of clarification here. The above map, while visually pleasing is not particularly informative to readers. Sizes are notoriously hard for readers to map values on to. It is only superseded by colours and hues. In this map, we are combining both colour and sizes to convey the popularity of the station. 
+
+The advantage of spatial objects is clear, when we want to use spatial relationships such as distance, enclosure, intersection etc. 
+See some examples below.
+
+```{r}
+st_distance(daytrips)[1:4,1:4]
+
+st_buffer(st_transform(daytrips, crs=26917), dist=500)
+
+daytrips %>% st_union() %>% st_centroid()
+
+daytrips %>% st_union() %>% st_convex_hull() %>% plot()
+
+```
+
+## Exploring Lines
+
+Lines are simply collections of points that are arranged in a particular sequence. A simplest line is defined by its end points. Conveniently, our data set has these kinds of lines defined by start and end stations for each trip. Let's explore the distribution of these trips.  We can easily plot these kinds of lines with `geom_segment` of ggplot2. 
+
+```{r fig.height=10, fig.width=10}
+numtrips <- diffdesttrips %>%
+  mutate(day_of_week = wday(starttime, label=TRUE, week_start=1),
+         hr = hour(starttime),
+         time_of_day = hr %>% cut(breaks=c(0,6,10,16,20,24), include.lowest = TRUE, labels=c("Midnight - 6AM", "6AM - 10AM", "10AM - 4PM", "4PM - 8PM", "8PM - Midnight"))
+         ) %>%
+  group_by(Sstid, Estid, day_of_week, time_of_day, gender) %>%
+  summarise(Slon = first(Slon),
+            Slat = first(Slat),
+            Elon = first(Elon),
+            Elat = first(Elat),
+            totaltrips = n(),
+            aveduration = mean(tripduration)
+            )
+
+numtrips %>% filter(totaltrips >2) %>%  
+ ggplot()+
+  #The "alpha=" is degree of transparency conditioned by totaltrips and used below to make the lines transparent
+  geom_segment(aes(x=Slon, y=Slat,xend=Elon, yend=Elat, alpha=totaltrips, colour=gender))+
+  #Here is the magic bit that sets line transparency - essential to make the plot readable
+  scale_alpha_continuous(range = c(0.005, 0.5), guide='none')+
+  #scale_color_manual(values=c('purple', 'white','green'), labels=c('Neither/Unknown', 'Male', "Female"), guide='legend')+
+  scale_color_brewer(palette="Set1", guide='legend')+
+  facet_grid(time_of_day~day_of_week)+
+  #Set black background, ditch axes
+  scale_x_continuous("", breaks=NULL)+
+  scale_y_continuous("", breaks=NULL)+
+  theme(panel.background = element_rect(fill='white',colour='white'), legend.position = "bottom")+
+        #legend.key=element_rect(fill='black', color='black')) + 
+  labs(title = 'New York Citi Bike June 2018 trips', colour="",caption="Nikhil Kaza: nkaza.github.io")
+```
+
+Since men are overwhelmingly large proportion of the trip makers, the plots are largely blue. There are also very few trips, outside Manhattan. Few trips from 8PM to 6AM. As we noted earlier, since large number of customers (who are not subscribers) are of 'unknown' gender the red lines showup more prominently around Central Park, on the weekends and in between non-commuting hours. This can be visualised as follows.
+
+```{r fig.height=10, fig.width=10}
+numtrips <- diffdesttrips %>%
+  mutate(day_of_week = wday(starttime, label=TRUE, week_start=1),
+         hr = hour(starttime),
+         time_of_day = hr %>% cut(breaks=c(0,6,10,16,20,24), include.lowest = TRUE, labels=c("Midnight - 6AM", "6AM - 10AM", "10AM - 4PM", "4PM - 8PM", "8PM - Midnight"))
+         ) %>%
+  group_by(Sstid, Estid, day_of_week, time_of_day, usertype) %>%
+  summarise(Slon = first(Slon),
+            Slat = first(Slat),
+            Elon = first(Elon),
+            Elat = first(Elat),
+            totaltrips = n(),
+            aveduration = mean(tripduration)
+            )
+
+numtrips %>% filter(totaltrips >2) %>%  
+ ggplot()+
+  #The "alpha=" is degree of transparency conditioned by totaltrips and used below to make the lines transparent
+  geom_segment(aes(x=Slon, y=Slat,xend=Elon, yend=Elat, alpha=totaltrips, colour=usertype))+
+  #Here is the magic bit that sets line transparency - essential to make the plot readable
+  scale_alpha_continuous(range = c(0.005, 0.5), guide='none')+
+  #scale_color_manual(values=c('purple', 'white','green'), labels=c('Neither/Unknown', 'Male', "Female"), guide='legend')+
+  scale_color_brewer(palette="Set1", guide='legend')+
+  facet_grid(time_of_day~day_of_week)+
+  #Set black background, ditch axes
+  scale_x_continuous("", breaks=NULL)+
+  scale_y_continuous("", breaks=NULL)+
+  theme(panel.background = element_rect(fill='white',colour='white'), legend.position = "bottom")+
+        #legend.key=element_rect(fill='black', color='black')) + 
+  labs(title = 'New York Citi Bike June 2018 trips', colour="",caption="Nikhil Kaza: nkaza.github.io")
+```
+
+While OD pairs give us a sense the popular origins and destinations, they give us very little information about what routes are taken by these bicyclists. Citi Bike, for vareity of reasons including privacy, data storage and usefulness does not release actual routes. However, we can use Google Maps Bicycling routes or Open Souce Routing Machine (OSRM) to calculate the shortest bicycling route between the `r diffdesttrips[!duplicated(diffdesttrips[,c('Sstid','Estid')]), c('Sstid', 'Slon', 'Slat', 'Estid', 'Elon', 'Elat')] %>% nrow() `  unique O-D pairs in the dataset. The following code produces the shortest routes between Origin and Destination station using the OSRM and is pre-computed to save time. 
+
+{{% callout note %}}
+
+The following code chunk only works if you have OSRM installed on the backend and the server is enabled. The OSRM package in R is an interface to it. I am showing the code only to show how you might create shortest paths using OSRM. You can skip it and move on to the next code chunk if you do not have OSRM installed.
+
+{{% /callout %}}
+
+```{r eval=FALSE}
+library(osrm)
+unique_od_pairs <- diffdesttrips[!duplicated(diffdesttrips[,c('Sstid','Estid')]), c('Sstid', 'Slon', 'Slat', 'Estid', 'Elon', 'Elat')]
+options(osrm.server = "http://localhost:5000/", osrm.profile = "cycling")
+k <- osrmRoute(src=unique_od_pairs[i,c('Sstid', 'Slon', 'Slat')] , dst=unique_od_pairs[i,c('Estid','Elon','Elat')], overview = "full", sp = TRUE)
+
+fastest_od_routes <- list()
+for(i in 1:nrow(unique_od_pairs)){
+try(fastest_od_routes[[i]] <- osrmRoute(src=unique_od_pairs[i,c('Sstid', 'Slon', 'Slat')] , dst=unique_od_pairs[i,c('Estid','Elon','Elat')], overview = "full", sp = TRUE))
+}
+
+sapply(fastest_od_routes, is.null) %>% sum()
+
+fastest_od_routes2 <- do.call(rbind, fastest_od_routes)
+writeOGR(fastest_od_routes2, dsn=".", layer="od_cycling_routes", driver="ESRI Shapefile")
+```
+
+Let's read in the data using read_sf and visualise it. We will merge the spatial route information with the OD trip information from earlier.
+
+ 
+```{r fig.height=10, fig.width=10}
+(od_fastest_routes <- here("tutorials_datasets","nycbikeshare", "od_cycling_routes.shp") %>% read_sf()) 
+(numtrips <- inner_join(numtrips, od_fastest_routes, by=c('Sstid' = 'src', "Estid"='dst')) %>% st_sf())
+
+```
+
+Subsetting and saving the object to a file on a disk is relatively straight forward as below.
+```{r eval=FALSE}
+numtripsgt2 <- filter(numtrips, totaltrips>2)
+write_sf(numtripsgt2, dsn='numtrips.shp')
+```
+Once the Shapefile is created, it could be styled in standard GIS such as QGIS. 
+
+![](./img/linewidths_road_num.png)
+
+We can also visualise it using ggplot. The outputs rely on geom_sf and coord_sf. There is an intermittent bug in geom_sf on Mac. So I am simply going to show the output.
+
+![](./img/test.jpg)
+
+
+***
+
+**Exercise**
+
+- Interpret the above image? Is this a good visualisation? Does it convey the right kind of information to the audience?
+
+- What differences can we observe, if we were facet by type of user?
+
+***
+## Areal Data
+
+More often than not, we use areal data to visualise ane explore the spatial distribution of a variable. Partly because visualisations are easier and partly because other ancillary data is associated with polygons. Polygons are simply areas enclosed by a line where the start and end of the line string are the same. A valid polygon is the one, whose boundary does not cross itself, no overlapping rings etc. Holes are allowed, as are collections of polygons for a feature.
+
+For this post, I am going to use the census blocks for New York city from 2010. Population data is available from American Community Survey for 2016 for blockgroups. Since blocks are perfectly nested within blockgroup, we can simply extract the blockgroup id from blocks and merge with the population data
+
+```{r}
+(blks <- here("tutorials_datasets","nycbikeshare", "nyc_blks.shp") %>% read_sf() )
+```
+
+The blocks are in a coordinate system different from WGS84. Because we will be doing spatial operations, it is useful to  make them all consistent. We will use the crs from station locations.
+
+```{r}
+station_loc <- station_loc %>% 
+  st_as_sf(coords = c('Longitude', 'Latitude'), crs = 4326)
+
+blks <- st_transform(blks, st_crs(station_loc))
+blks %>% st_geometry() %>% plot()
+blks <- blks %>% filter(ALAND10>0) # Ignore all the blocks that are purely water. This may be problematic for other analyses.
+nrow(blks) #Compare this result with rows before
+```
+
+While Block groups have 15 digit GEOID, these are nested within a 12 digit ID Block group. The summarise statement automatically unions the geometry.
+
+```{r}
+blks$BGID10 <- substr(blks$GEOID10, 1, 12)
+bg <- blks %>% 
+  group_by(BGID10) %>%
+  summarise()
+
+bg %>% .[,1] %>% plot()
+```
+
+While the above looks fine, it would be good to look under the hood. Summarize automatically uses `st_union` to summarize geometries. This is usually a good idea. However, on occasions, it might results in inconsistent geometries and therefore the geometry is cast to  higher level type such as "GEOMETRY" instead of "POLYGON" or "MULTIPOLYGON". So we explicitly cast it to MULTIPOLYGON as we should expect all Block groups to be polygons.
+
+```{r}
+(bg <- bg %>% st_cast("MULTIPOLYGON"))
+```
+
+Let's read in the population and home values from the American Community Survey data. The geographies do not change in the inter decadal years while the variables do. So it is OK to attach to geography data of a different vintage.
+
+```{r}
+
+bg_pop <- here("tutorials_datasets","nycbikeshare", "nypop2016acs.csv") %>% read_csv()
+bg_pop$GEOID10 <- stringr::str_split(bg_pop$GEOID, '15000US', simplify = TRUE)[,2]
+bg_pop$GEOID10 %>% nchar() %>% summary()
+
+```
+
+Since we are merging population data with polygon data, we can use the dplyr::inner_join. 
+```{r}
+
+bg_pop <- inner_join(bg_pop, bg, by=c("GEOID10"="BGID10")) %>% st_sf()
+bg_pop %>% select(population, home_value) %>% plot(border=NA)
+
+```
+
+***
+
+**Exercise**
+
+To create a visualisation that allows some dynamism, you can use `mapview` and `leafsync` packages. Mapview function quickly creates a leaflet like plot and sync function from leafsync allows you to link two plots together so that changes in one (zoom, pan etc) get reflected in the other. Use these to functions to recreate the above plot. Hint: use zcol argument.
+
+***
+
+As you know, changing the color breaks dramatically changes the meaning that is being conveyed by the map.
+
+```{r}
+plot(bg_pop["home_value"], breaks = "fisher", border='NA', main="Home Value")
+```
+
+<!--  ```{r} -->
+<!--  library(mapview) -->
+<!--  pop_map <- mapview(bg_pop, zcol="population", legend = T) -->
+<!--  home_val_map <- mapview(bg_pop, zcol = "home_value", legend=TRUE) -->
+<!--  leafsync::sync(pop_map, home_val_map) -->
+<!-- ``` -->
+
+
+As mentioned topological operations are key advantages of spatial data. Suppose we want to find out how many stations are there in each block group, we can use `st_covers` or `st_covered_by`.
+
+```{r}
+summary(lengths(st_covers(bg_pop, station_loc)))
+bg_pop$numstations <- lengths(st_covers(bg_pop, station_loc))
+
+```
+
+***
+
+**Exercise**
+
+Visualise the numstations using leaflet or mapview. Experiment with different color schemes, color cuts and even different types of visualisations. For example, is a map the most useful representation?
+
+***
+
+While it is fine to visualise in space how stations are concentrated using choropleths, the main advantage is to allow for exploration of relationships with other data such as home values and total population. Some analyses are presented below that should be self-explanatory.
+
+```{r}
+ggplot(bg_pop) + 
+  geom_point(aes(x=home_value, y= numstations)) +
+  labs(x='Average Home Value', y='Number of Citi Bike stations')
+
+ggplot(bg_pop) + 
+  geom_point(aes(x=population, y= numstations)) +
+  labs(x='Population', y='Number of Citi Bike stations')
+
+ggplot(bg_pop[bg_pop$numstations > 0,]) + 
+  geom_boxplot(aes(x=factor(numstations), y= population)) +
+  labs(x='Number of Stations', y='Population')
+
+
+# merging trip starts on different days with 
+
+numtrips <- diffdesttrips %>%
+  mutate(day_of_week = wday(starttime, label=TRUE, week_start=1),
+         hr = hour(starttime),
+         time_of_day = hr %>% cut(breaks=c(0,6,10,16,20,24), include.lowest = TRUE, labels=c("Midnight - 6AM", "6AM - 10AM", "10AM - 4PM", "4PM - 8PM", "8PM - Midnight"))
+  ) %>%
+  group_by(Sstid, Estid, day_of_week, time_of_day, usertype) %>%
+  summarise(Slon = first(Slon),
+            Slat = first(Slat),
+            Elon = first(Elon),
+            Elat = first(Elat),
+            totaltrips = n(),
+            aveduration = mean(tripduration)
+  )
+
+numtrips <- st_as_sf(numtrips, coords = c('Slon', 'Slat'), crs = 4326)
+bg_numtrips <- st_join(numtrips, bg_pop, join=st_covered_by)
+
+bg_numtrips <- st_join(numtrips, bg_pop, join=st_covered_by) %>% 
+              group_by(day_of_week, time_of_day, usertype, GEOID10) %>% 
+              summarise(
+                totaltrips = sum(totaltrips),
+                population = first(population),
+                home_value = first(home_value)
+              )
+  
+                     
+               
+  
+ggplot(bg_numtrips) + 
+  geom_smooth(aes(x=population, y= totaltrips, color=usertype)) +
+  facet_grid(~day_of_week)+
+  labs(x='Population', y='Trip Starts', colour= 'User Type') + 
+  theme_bw() + 
+  theme(legend.position = 'bottom')
+
+```
+
+***
+**Exercise**
+
+- What are the patterns that emerge from these visualisations?
+- Show at least one other type of data visualisation using this dataset.
+
+***
+
+It is important to realise that, these represent only block groups where trips originate. Large numbers of block groups do not have trip starts associated with them. The relationships presented above are skewed based on the availability of the stations. We should recognise how our data generation processes conditions our results and their interpretations.
+
+To understand the limitation of the bikeshare to wealthier parts of New York, once could visualise the entire set of block groups and show the block groups that do not have any trips associated with them, in addition to block groups that do.
+
+It turns out that maps may not be best way to visualise them but complicatedly arranged statistical graphics might. Take a look at the following code and carefully deconstruct what is going on and the resultant visualisations. Think through, if this is indeed the best way to visualise this for the particular story you want to tell.
+
+
+```{r}
+
+numtrips <- diffdesttrips  %>%
+  group_by(Sstid) %>%
+  summarise(Slon = first(Slon),
+            Slat = first(Slat),
+            totaltrips = n(),
+            aveduration = median(tripduration, na.rm=TRUE)
+  ) %>%
+  st_as_sf(coords = c('Slon', 'Slat'), crs = 4326)
+  
+bg_trips <- 
+  st_join(bg_pop, numtrips, join=st_covers)
+
+
+g1 <- bg_trips %>%
+      filter(!is.na(.$totaltrips)) %>%
+      mutate(home_value = home_value/1000) %>%
+  ggplot() +
+  geom_jitter(aes(x = home_value, y = totaltrips), alpha=.5) +
+  geom_rug(aes(x= home_value), alpha=.3)+
+  xlim(0,2000)+
+  geom_smooth(aes(x= home_value, y=totaltrips), method='loess')+
+  ylab('Total Number of Trips') +
+  xlab('')+
+  theme(axis.text.x = element_blank(), 
+        axis.ticks.x= element_blank())
+
+g2 <- bg_trips %>%
+       mutate(notripsbg = factor(is.na(bg_trips$totaltrips), labels=c('No trips', 'Atleast 1 trip')),
+                home_value = home_value/1000) %>%
+        ggplot()+
+        xlim(0,2000)+
+        geom_density(aes(x=home_value, color=notripsbg))  +
+        xlab('Block Group Median Home Value in 1000s') +
+        ylab('Density') +
+        theme(legend.position = 'bottom',
+              legend.title = element_blank())
+
+
+
+library(gtable)
+library (grid)
+
+g3 <- ggplotGrob(g1)
+g4 <- ggplotGrob(g2)
+g <- rbind(g3, g4, size = "last")
+g$widths <- unit.pmax(g3$widths, g4$widths)
+grid.newpage()
+grid.draw(g)
+
+```
+
+
+***
+**Exercise**
+
+Strictly speaking the above graphic is a misrespresentation. It is treating NAs as 0. Furthermore, having no station in a block group would preclude a trip from starting there. So you probably only want to visualise block groups that have at least one station not all block groups? How do such a visualisation differ from the one above? Does it change the story you want to tell? 
+
+***
+
+ggplot can also be used to visualise geographical objects, using `geom_sf` directly. 
+
+```{r}
+g1 <- bg_trips %>% mutate(aveduration = aveduration/60) %>%
+  ggplot() + 
+  geom_sf(aes(fill=aveduration), lwd=0) +
+  scale_fill_gradient2() +
+  labs(fill= '', title="Median Trip Duration") +
+  theme_bw() + 
+  theme(legend.position = 'bottom')
+  
+g2 <- bg_trips%>%
+  ggplot() + 
+  geom_sf(aes(fill=totaltrips), lwd=0) +
+  scale_fill_gradient2() +
+  labs(title= 'Number of trip starts', fill="") +
+  theme_bw() + 
+  theme(legend.position = 'bottom') 
+
+library(gridExtra)
+grid.arrange(g1,g2, ncol=2)
+
+```
+
+Finally, `as_Spatial()` allows to convert sf and sfc to sp objects. These allow for functions from `rgeos` and `spdep` to be used. In general, support for sp objects is more widespread for modelling, while `sf` objects are more of a leading edge and we should expect to see their adoption in other packages that rely on spatial methods. 
+
+## Conclusions
+
+I hope that I made clear that analysis of big datasets (and small for that matter) rely heavily on user judgements. These judgements and intuitions are developed over time and could be a function of experience. Much of analytical work is iterative and goes in fits and starts. In any case, use of various tools available in R can help us see and communicate patterns in spatial and non-spatial data, without giving primacy to one or the other.
+
+
+
+
+

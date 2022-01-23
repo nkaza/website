@@ -1,0 +1,163 @@
+---
+title: Techniques & Politics of New Urban Analytics
+author: Nikhil Kaza
+date: '2018-07-26'
+slug: techniques-politics-short-course
+categories: 
+ - R
+tags:
+  - techniques-short-course
+  - new-urban-analytics
+  - teaching
+header:
+  caption: ''
+  image: ''
+summary: A short course on urban analytics in R. And a critical look at urban analytics.
+output:
+  blogdown::html_page:
+    toc: true
+    fig_width: 6
+    number_sections: false
+    toc_depth: 1
+---
+```{r setup, include=FALSE}
+library(RefManageR)
+dropboxpath <- ifelse(.Platform$OS.type == "windows", "F:\\Dropbox", "~/Dropbox")
+bib <- ReadBib(file.path(dropboxpath, "Public", "master.bib"))
+myopts <- BibOptions(bib.style = "authoryear", style="markdown", first.inits=FALSE, max.names = 3)
+
+```
+
+
+# Course Description & Objectives
+
+This course is about different techniques used in assembling, managing, visualising, analysing and predicting using heterogeneous and messy data sets in urban environments. These include point, polygon, raster, vector, text, image and network data; data sets with high cadence and high spatial resolution; data sets that are inherently messy and incomplete. In addition to the mechanics of urban data analytics, we will also explore the issues of ethics and politics of data generation and analysis.
+
+
+## Prerequisites
+
+Much of the analytical techniques will be taught using R. A working knowledge of the R environment is useful, though the first couple of labs, we will go over the basics. However, the course moves quickly. You are advised to seek help to keep up
+
+# Textbooks
+
+We will discuss the topics from the following two books in class. Students ae expected to read through the material before Day 1.
+
+```{r echo=FALSE, results='asis'}
+bib[c("townsend2013smart", "oneil_weapons_2016")]
+```
+
+The following books are recommended for reference.
+
+```{r echo=FALSE, results='asis'}
+bib[c("grolemund_r_2017", "bivand_applied_2013","brewer_designing_2015", "tufte_visual_2001", "few_show_2004")]
+```
+
+# Course Policies
+
+## Equipment
+Every student should have a working laptop that has [R](https://www.r-project.org/) and [Rstudio](https://www.rstudio.com/) installed. The laptops should have sufficient memory and processing capacity to deal with large data sets.
+
+## Grading
+
+- **30%**  lab reports to be submitted at the end of the lab (Individual)
+
+- **30%**  Daily homework assignments due by 11:59 PM (Individual)
+
+- **20%** Final project (Group)
+
+- **10%** Class & lab participation
+
+Grading of labs and homeworks will be through Canvas. Instructions will be provided on the first day of class.
+
+## Academic Conduct
+
+I firmly believe in learning from your peers and from others. All homework and lab submissions could benefit from collaborations, however, the submissions are individual. This means that interpreting the data and the results, producing the visualisations, drawing appropriate conclusions from the data is necessarily individual even when the strategies can be discussed and developed with others in class or out of class. **All** help, however, should be explicitly acknowledged. Severe penalties are imposed for non-attribution.
+
+
+
+# Schedule 
+
+***
+## Day 1
+### 8:30 AM - 11:40 AM (Lec & Lab): Introduction
+
+- Lecture.    [slides](/slides/techniques_Introduction/Introduction_slides.html) | [UCLA slides](https://stats.idre.ucla.edu/r/seminars/intro/)
+- Lab Session: Introduction to R.    [Notes](/post/introduction-to-r-exploratory-data-visualisation)
+
+
+### 2:30 PM - 4:40 PM (Lab): Visualising urban data
+- Lab Session: Exploring large urban datasets. Vector data. Visualsing using small multiples, choropleth maps etc.      [Notes](/post/geospatial-data-in-r)
+- [Homework](../techniques_hw/hw1.pdf): Due Day 1 11:59 PM in Canvas
+
+
+***
+
+## Day 2 
+
+### 8:30 AM - 11:40 AM (Lec & Lab): Raster Analysis
+
+- Lecture. [slides](/slides/Raster/rasterR_slides.html)
+- Lab Session: Basic raster analysis in R, Urban landscape metrics     [Notes 1](https://www.rspatial.org/analysis/rst/9-remotesensing.html#part-i) |    [Notes 2](/post/urban-morphology-landscape-metrics/) 
+- [Homework](../techniques_hw/hw2.pdf): Due Day 2 11:59 PM in Canvas
+
+### 2:30 PM - 4:40 PM (Seminar) : The ethics of smart cities
+Students are expected to read through the material and be prepared to discuss the topics in class. This is a student driven discussion. Instructor will only facilitate.
+
+#### Assigned Readings
+
+```{r, echo = FALSE, results="asis"} 
+bib[c("goodspeed2014smart", "vanolo2014smartmentality", "hill_street_2008", "wang_why_2016")]
+```
+
+
+***
+
+## Day 3 
+
+### 8:30 AM - 11:40 AM (Lec & Lab): Classification & Machine Learning
+
+- Lecture. [slides](https://docs.google.com/presentation/d/120Wer0YimQ3SKqOQ-M-MYf0A0-PqQTohYdUESifj1NQ/edit#slide=id.p)
+- Lab Session: Remote sensing classification, machine learning. [Notes](/post/machine-learning-for-remote-sensing/)
+- [Homework](../techniques_hw/hw3.pdf): Due Day 3 11:59 PM in Canvas
+
+
+### 2:30 PM - 4:40 PM (Lec): Predictive Blackboxes & Algorithmic Biases 
+
+#### Assigned Readings
+```{r, echo = FALSE, results="asis"} 
+bib[c("tufekci_algorithmic_2015", "Ziewitz_2015", "rosenblat2016truth")]
+
+```
+
+***
+
+
+## Day 4 
+
+### 8:30 AM - 11:40 AM (Lab): Scraping the web for data
+
+- Lab Session: Points of Interest on Baidu. [Notes](/post/scraping-web-for-data/)
+- [Homework](../techniques_hw/hw4.pdf): Due Day 4 11:59 PM in Canvas
+
+
+### 2:30 PM - 4:40 PM (Research Talk): (Mis)adventures in urban analytics
+
+***
+
+## Day 5 
+
+### 8:30 AM - 11:40 AM (Lec & Lab) :  Visualising & Analysing Point Patterns
+
+- Lecture:
+- Lab Session: Analysing crime clusters in Manchester [Notes](/post/cluster-detection-in-point-data)
+
+
+### 2:30 PM - 4:40 PM: Group Project Work
+
+***
+
+## Day 6 
+
+### 8:30 AM - 11:40 AM: Short Project Presentations
+
+***

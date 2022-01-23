@@ -1,0 +1,175 @@
+---
+title: Techniques & Politics of New Urban Analytics
+author: Nikhil Kaza
+date: '2018-07-26'
+slug: techniques-politics-short-course
+categories: 
+ - R
+tags:
+  - techniques-short-course
+  - new-urban-analytics
+  - teaching
+header:
+  caption: ''
+  image: ''
+summary: A short course on urban analytics in R. And a critical look at urban analytics.
+output:
+  blogdown::html_page:
+    toc: true
+    fig_width: 6
+    number_sections: false
+    toc_depth: 1
+---
+
+
+<div id="TOC">
+<ul>
+<li><a href="#course-description-objectives">Course Description &amp; Objectives</a></li>
+<li><a href="#textbooks">Textbooks</a></li>
+<li><a href="#course-policies">Course Policies</a></li>
+<li><a href="#schedule">Schedule</a></li>
+</ul>
+</div>
+
+<div id="course-description-objectives" class="section level1">
+<h1>Course Description &amp; Objectives</h1>
+<p>This course is about different techniques used in assembling, managing, visualising, analysing and predicting using heterogeneous and messy data sets in urban environments. These include point, polygon, raster, vector, text, image and network data; data sets with high cadence and high spatial resolution; data sets that are inherently messy and incomplete. In addition to the mechanics of urban data analytics, we will also explore the issues of ethics and politics of data generation and analysis.</p>
+<div id="prerequisites" class="section level2">
+<h2>Prerequisites</h2>
+<p>Much of the analytical techniques will be taught using R. A working knowledge of the R environment is useful, though the first couple of labs, we will go over the basics. However, the course moves quickly. You are advised to seek help to keep up</p>
+</div>
+</div>
+<div id="textbooks" class="section level1">
+<h1>Textbooks</h1>
+<p>We will discuss the topics from the following two books in class. Students ae expected to read through the material before Day 1.</p>
+<p>O’Neil, Cathy (2016). <em>Weapons of Math Destruction: How Big Data Increases Inequality and Threatens Democracy</em>. New York: Crown.</p>
+<p>Townsend, Anthony M (2013). <em>Smart cities: Big data, civic hackers, and the quest for a new utopia</em>. WW Norton &amp; Company.</p>
+<p>The following books are recommended for reference.</p>
+<p>Bivand, Roger S, Edzer Pebesma and Virgilio Gómez-Rubio (2013). <em>Applied Spatial Data Analysis with R</em>. 2nd ed. 2013 edition. New York Heidelberg Dordrecht London: Springer. ISBN: 978-1-4614-7617-7.</p>
+<p>Brewer, Cynthia A. (2015). <em>Designing Better Maps: A Guide for GIS Users</em>. 2 edition. Redlands, California: Esri Press. ISBN: 978-1-58948-440-5.</p>
+<p>Few, Stephen (2004). <em>Show Me the Numbers: Designing Tables and Graphs to Enlighten</em>. Oakland, Calif: Analytics Press. ISBN: 978-0-9706019-9-5.</p>
+<p>Grolemund, Garrett and Hadley Wickham (2017). <em>R for Data Science: Import, Tidy, Transform, Visualize, and Model Data</em>. Sebastopol, CA: O’ Reilly media,. URL: <a href="http://r4ds.had.co.nz/" class="uri">http://r4ds.had.co.nz/</a> (visited on May. 25, 2018).</p>
+<p>Tufte, E. R (2001). <em>The Visual display of Quantitative Information</em>. Cheshire, CT: Graphics Press.</p>
+</div>
+<div id="course-policies" class="section level1">
+<h1>Course Policies</h1>
+<div id="equipment" class="section level2">
+<h2>Equipment</h2>
+<p>Every student should have a working laptop that has <a href="https://www.r-project.org/">R</a> and <a href="https://www.rstudio.com/">Rstudio</a> installed. The laptops should have sufficient memory and processing capacity to deal with large data sets.</p>
+</div>
+<div id="grading" class="section level2">
+<h2>Grading</h2>
+<ul>
+<li><p><strong>30%</strong> lab reports to be submitted at the end of the lab (Individual)</p></li>
+<li><p><strong>30%</strong> Daily homework assignments due by 11:59 PM (Individual)</p></li>
+<li><p><strong>20%</strong> Final project (Group)</p></li>
+<li><p><strong>10%</strong> Class &amp; lab participation</p></li>
+</ul>
+<p>Grading of labs and homeworks will be through Canvas. Instructions will be provided on the first day of class.</p>
+</div>
+<div id="academic-conduct" class="section level2">
+<h2>Academic Conduct</h2>
+<p>I firmly believe in learning from your peers and from others. All homework and lab submissions could benefit from collaborations, however, the submissions are individual. This means that interpreting the data and the results, producing the visualisations, drawing appropriate conclusions from the data is necessarily individual even when the strategies can be discussed and developed with others in class or out of class. <strong>All</strong> help, however, should be explicitly acknowledged. Severe penalties are imposed for non-attribution.</p>
+</div>
+</div>
+<div id="schedule" class="section level1">
+<h1>Schedule</h1>
+<hr />
+<div id="day-1" class="section level2">
+<h2>Day 1</h2>
+<div id="am---1140-am-lec-lab-introduction" class="section level3">
+<h3>8:30 AM - 11:40 AM (Lec &amp; Lab): Introduction</h3>
+<ul>
+<li>Lecture. <a href="/slides/techniques_Introduction/Introduction_slides.html">slides</a> | <a href="https://stats.idre.ucla.edu/r/seminars/intro/">UCLA slides</a></li>
+<li>Lab Session: Introduction to R. <a href="/post/introduction-to-r-exploratory-data-visualisation">Notes</a></li>
+</ul>
+</div>
+<div id="pm---440-pm-lab-visualising-urban-data" class="section level3">
+<h3>2:30 PM - 4:40 PM (Lab): Visualising urban data</h3>
+<ul>
+<li>Lab Session: Exploring large urban datasets. Vector data. Visualsing using small multiples, choropleth maps etc. <a href="/post/geospatial-data-in-r">Notes</a></li>
+<li><a href="../techniques_hw/hw1.pdf">Homework</a>: Due Day 1 11:59 PM in Canvas</li>
+</ul>
+<hr />
+</div>
+</div>
+<div id="day-2" class="section level2">
+<h2>Day 2</h2>
+<div id="am---1140-am-lec-lab-raster-analysis" class="section level3">
+<h3>8:30 AM - 11:40 AM (Lec &amp; Lab): Raster Analysis</h3>
+<ul>
+<li>Lecture. <a href="/slides/Raster/rasterR_slides.html">slides</a></li>
+<li>Lab Session: Basic raster analysis in R, Urban landscape metrics <a href="https://www.rspatial.org/analysis/rst/9-remotesensing.html#part-i">Notes 1</a> | <a href="/post/urban-morphology-landscape-metrics/">Notes 2</a></li>
+<li><a href="../techniques_hw/hw2.pdf">Homework</a>: Due Day 2 11:59 PM in Canvas</li>
+</ul>
+</div>
+<div id="pm---440-pm-seminar-the-ethics-of-smart-cities" class="section level3">
+<h3>2:30 PM - 4:40 PM (Seminar) : The ethics of smart cities</h3>
+<p>Students are expected to read through the material and be prepared to discuss the topics in class. This is a student driven discussion. Instructor will only facilitate.</p>
+<div id="assigned-readings" class="section level4">
+<h4>Assigned Readings</h4>
+<p>Goodspeed, Robert (2014). “Smart cities: moving beyond urban cybernetics to tackle wicked problems”. In: <em>Cambridge Journal of Regions, Economy and Society</em> 8.1, pp. 79-92.</p>
+<p>Hill, Dan (2008). <em>The street as platform</em>. URL: <a href="http://www.cityofsound.com/blog/2008/02/the-street-as-p.html" class="uri">http://www.cityofsound.com/blog/2008/02/the-street-as-p.html</a> (visited on Jun. 03, 2018).</p>
+<p>Vanolo, Alberto (2014). “Smartmentality: The smart city as disciplinary strategy”. In: <em>Urban Studies</em> 51.5, pp. 883-898.</p>
+<p>Wang, Tricia (2016). <em>Why Big Data Needs Thick Data</em>. URL: <a href="https://medium.com/ethnography-matters/why-big-data-needs-thick-data-b4b3e75e3d7" class="uri">https://medium.com/ethnography-matters/why-big-data-needs-thick-data-b4b3e75e3d7</a> (visited on Jun. 03, 2018).</p>
+<hr />
+</div>
+</div>
+</div>
+<div id="day-3" class="section level2">
+<h2>Day 3</h2>
+<div id="am---1140-am-lec-lab-classification-machine-learning" class="section level3">
+<h3>8:30 AM - 11:40 AM (Lec &amp; Lab): Classification &amp; Machine Learning</h3>
+<ul>
+<li>Lecture. <a href="https://docs.google.com/presentation/d/120Wer0YimQ3SKqOQ-M-MYf0A0-PqQTohYdUESifj1NQ/edit#slide=id.p">slides</a></li>
+<li>Lab Session: Remote sensing classification, machine learning. <a href="/post/machine-learning-for-remote-sensing/">Notes</a></li>
+<li><a href="../techniques_hw/hw3.pdf">Homework</a>: Due Day 3 11:59 PM in Canvas</li>
+</ul>
+</div>
+<div id="pm---440-pm-lec-predictive-blackboxes-algorithmic-biases" class="section level3">
+<h3>2:30 PM - 4:40 PM (Lec): Predictive Blackboxes &amp; Algorithmic Biases</h3>
+<div id="assigned-readings-1" class="section level4">
+<h4>Assigned Readings</h4>
+<p>Rosenblat, Alex (2016). “The truth about how Uber’s app manages drivers”. In: <em>Harvard Business Review</em>.</p>
+<p>Tufekci, Zeynep (2015). “Algorithmic Harms beyond Facebook and Google: Emergent Challenges of Computational Agency”. In: <em>Colorado Technology Law Journal</em> 13, p. 203. URL: <a href="https://heinonline.org/HOL/Page?handle=hein.journals/jtelhtel13&amp;id=227&amp;div=&amp;collection=" class="uri">https://heinonline.org/HOL/Page?handle=hein.journals/jtelhtel13&amp;id=227&amp;div=&amp;collection=</a>.</p>
+<p>Ziewitz, Malte (2015). “Governing Algorithms”. In: <em>Science, Technology, &amp; Human Values</em> 41.1, pp. 3-16. ISSN: 1552-8251. DOI: <a href="https://doi.org/10.1177/0162243915608948">10.1177/0162243915608948</a>. URL: <a href="http://dx.doi.org/10.1177/0162243915608948" class="uri">http://dx.doi.org/10.1177/0162243915608948</a>.</p>
+<hr />
+</div>
+</div>
+</div>
+<div id="day-4" class="section level2">
+<h2>Day 4</h2>
+<div id="am---1140-am-lab-scraping-the-web-for-data" class="section level3">
+<h3>8:30 AM - 11:40 AM (Lab): Scraping the web for data</h3>
+<ul>
+<li>Lab Session: Points of Interest on Baidu. <a href="/post/scraping-web-for-data/">Notes</a></li>
+<li><a href="../techniques_hw/hw4.pdf">Homework</a>: Due Day 4 11:59 PM in Canvas</li>
+</ul>
+</div>
+<div id="pm---440-pm-research-talk-misadventures-in-urban-analytics" class="section level3">
+<h3>2:30 PM - 4:40 PM (Research Talk): (Mis)adventures in urban analytics</h3>
+<hr />
+</div>
+</div>
+<div id="day-5" class="section level2">
+<h2>Day 5</h2>
+<div id="am---1140-am-lec-lab-visualising-analysing-point-patterns" class="section level3">
+<h3>8:30 AM - 11:40 AM (Lec &amp; Lab) : Visualising &amp; Analysing Point Patterns</h3>
+<ul>
+<li>Lecture:</li>
+<li>Lab Session: Analysing crime clusters in Manchester <a href="/post/cluster-detection-in-point-data">Notes</a></li>
+</ul>
+</div>
+<div id="pm---440-pm-group-project-work" class="section level3">
+<h3>2:30 PM - 4:40 PM: Group Project Work</h3>
+<hr />
+</div>
+</div>
+<div id="day-6" class="section level2">
+<h2>Day 6</h2>
+<div id="am---1140-am-short-project-presentations" class="section level3">
+<h3>8:30 AM - 11:40 AM: Short Project Presentations</h3>
+<hr />
+</div>
+</div>
+</div>
